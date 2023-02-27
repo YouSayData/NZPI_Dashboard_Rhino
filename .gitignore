@@ -1,6 +1,14 @@
+.DS_Store
+rsconnect
+tests
+
 # History files
 .Rhistory
 .Rapp.history
+.Rproj.user
+
+#rds folder
+rds
 
 # Session Data files
 .RData
