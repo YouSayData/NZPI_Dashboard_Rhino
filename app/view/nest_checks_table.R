@@ -1,15 +1,17 @@
 box::use(
   reactable[
-    reactableOutput,
-    renderReactable,
     reactable,
     colDef,
     colFormat,
   ],
   shiny[
+    tagList,
     moduleServer, 
     NS,
-    ],
+    div,
+    uiOutput,
+    renderUI,
+  ],
   dplyr[
     select,
     arrange,
@@ -18,6 +20,13 @@ box::use(
   tippy[
     tippy,
   ],
+  stringr[
+    str_c,
+  ],
+)
+
+box::use(
+  app / logic / data_utils,
 )
 
 with_tooltip <- function(value, tooltip, ...) {
@@ -29,14 +38,19 @@ with_tooltip <- function(value, tooltip, ...) {
 ui <- function(id) {
   ns <- NS(id)
 
-  reactableOutput(ns("table"))
+  uiOutput(ns("table"))
 }
 
 #' @export
 server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
-    output$table <- renderReactable({
-      data() |>
+    output$table <- renderUI({
+      table_id <- str_c(id, "react_tbl", sep = "-")
+      
+      tagList(
+        data_utils$csvDownloadButton(
+          table_id),
+        data() |>
         select(
           Date,
           Time,
@@ -76,7 +90,9 @@ server <- function(id, data) {
                                          vAlign = "center"),
             `Number of Chicks` = colDef(align = "center",
                                          vAlign = "center")
-          )
+          ),
+          elementId = table_id
+        )
         )
     })
   })

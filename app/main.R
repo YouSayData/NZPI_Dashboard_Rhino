@@ -34,6 +34,7 @@ box::use(
     infoBox,
   ],
   dplyr[
+    bind_rows,
     filter,
     pull,
   ],
@@ -325,10 +326,13 @@ server <- function(id) {
     )
 
     # summary_data <- data_handler$load_data("nest_summary3")
-    summary_mockup <- readRDS(here("rds", "mockup_data_2.rds"))
-    comparison_mockup <- readRDS(here("rds", "mockup_data_2.rds"))
+    summary_mockup <- bind_rows(
+      readRDS(here("rds", "mockup_data_2.rds")),
+      readRDS(here("rds", "mockup_data_3.rds"))
+      )
+    
     summary_data <- summary_mockup
-    comparison_data <- comparison_mockup
+    comparison_data <- summary_mockup
     RV$summary_data <- summary_data
     RV$comparison_data <- comparison_data
 
@@ -415,7 +419,7 @@ server <- function(id) {
     summary_map$server(
       "comparison_map",
       reactive(
-        RV$summary_data
+        RV$comparison_data
       )
     )
     
@@ -467,7 +471,7 @@ server <- function(id) {
       )
     })
     
-    observeEvent(input$comparison_site, {
+    observeEvent(input$comparison_sites, {
       RV$comparison_data <- data_handler$update_comparison_data(
         summary_data,
         list(

@@ -1,7 +1,5 @@
 box::use(
   reactable[
-    reactableOutput,
-    renderReactable,
     reactable,
     colDef,
     colFormat,
@@ -12,13 +10,23 @@ box::use(
     mutate,
   ],
   shiny[
+    tagList,
     moduleServer, 
     NS,
     div,
+    uiOutput,
+    renderUI,
   ],
   tippy[
     tippy,
   ],
+  stringr[
+    str_c,
+  ],
+)
+
+box::use(
+  app / logic / data_utils,
 )
 
 with_tooltip <- function(value, tooltip, ...) {
@@ -30,13 +38,15 @@ with_tooltip <- function(value, tooltip, ...) {
 ui <- function(id) {
   ns <- NS(id)
   
-  reactableOutput(ns("table"))
+  uiOutput(ns("table"))
 }
 
 #' @export
 server <- function(id, data, show_counts) {
   moduleServer(id, function(input, output, session) {
-    output$table <- renderReactable({
+    output$table <- renderUI({
+      
+      table_id <- str_c(id, "react_tbl", sep = "-")
       
       if (show_counts()) {
         display_data <- data() |>
@@ -95,6 +105,9 @@ server <- function(id, data, show_counts) {
             Season = as.character(Season)
           )
         
+        tagList(
+          data_utils$csvDownloadButton(
+            table_id),
         display_data |>
           reactable(
             filterable = T,
@@ -122,8 +135,10 @@ server <- function(id, data, show_counts) {
               `Egg success (fledged/laid)` = colDef(format = colFormat(percent = TRUE, digits = 1),
                                                     align = "center",
                                                     vAlign = "center")
-            )
+            ),
+            elementId = table_id
           )
+        )
       }
     })
   })

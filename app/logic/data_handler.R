@@ -178,7 +178,7 @@ update_comparison_data <- function(dataset, data_filters) {
   
   site_filter <- data_filters["site_filter"] |>
     unlist()
-
+  
   dataset <- dataset |>
     filter(
       Area %in% area_filter,

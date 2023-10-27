@@ -5,6 +5,7 @@ box::use(
     e_charts,
     e_bar,
     e_tooltip,
+    e_toolbox_feature,
   ],
   shiny[
     div,
@@ -41,7 +42,8 @@ server <- function(id, data) {
         e_charts(year, timeline = T) |>
         e_bar(`Chicks fledged per clutch`) |>
         e_bar(`Chicks fledged per female`) |>
-        e_tooltip()
+        e_tooltip() |> 
+        e_toolbox_feature(feature = c("saveAsImage"))
       
       echart
     })
