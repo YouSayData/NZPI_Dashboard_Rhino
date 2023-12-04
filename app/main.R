@@ -15,7 +15,9 @@ box::use(
     tags,
   ],
   shiny.semantic[
+    file_input,
     selectInput,
+    button,
     toggle,
     updateSelectInput,
   ],
@@ -34,6 +36,8 @@ box::use(
     infoBox,
   ],
   dplyr[
+    as_tibble,
+    tibble,
     bind_rows,
     filter,
     pull,
@@ -46,6 +50,13 @@ box::use(
     useWaiter,
     waiter_show,
     waiter_hide,
+  ],
+  openxlsx[
+    read.xlsx,
+    write.xlsx,
+  ],
+  stringr[
+    str_replace_all,
   ],
 )
 
@@ -91,6 +102,11 @@ ui <- function(id) {
           tabName = "comparison",
           "Comparisons",
           icon = icon("clone outline")
+        ),
+        menuItem(
+          tabName = "visualise_own",
+          "Your Data",
+          icon = icon("chart bar outline")
         )
       )
     ),
@@ -290,6 +306,45 @@ ui <- function(id) {
             )
           )
         ),
+
+# Visualise own data ------------------------------------------------------
+
+tabItem(
+  tabName = "visualise_own",
+  fluidRow(
+    box(
+      title = "Filters",
+      color = "grey",
+      ribbon = T,
+      file_input(
+        ns("own_data_file"),
+        label = "",
+        accept = "xlsx",
+        multiple = F
+      ),
+      button(ns("visualise_button"), "Visualise"),
+      toggle(ns("own_data_absolute_values"),
+             label = "Show counts",
+             is_marked = FALSE
+      )
+    ),
+    box(
+      summary_plot$ui(ns("own_data_plot")),
+      title = "Plot",
+      ribbon = F,
+      collapsible = T
+    )
+  ),
+  fluidRow(
+    box(
+      summary_table$ui(ns("own_data_table")),
+      title = "Data",
+      ribbon = F,
+      collapsible = T
+    )
+  )
+),
+        
         tags$head(
           tags$link(
             rel = "icon", 
@@ -335,6 +390,7 @@ server <- function(id) {
     comparison_data <- summary_mockup
     RV$summary_data <- summary_data
     RV$comparison_data <- comparison_data
+    RV$own_data <- tibble()
 
     summary_region_choices <- summary_data |>
       pull(Region) |>
@@ -399,13 +455,6 @@ server <- function(id) {
       )
     )
     
-    #comparison_plot$server(
-     # "comparison_plot",
-    #  reactive(
-   #     RV$comparison_data
-  #    )
- #   )
-    
     comparison_table$server(
       "comparison_table",
       reactive(
@@ -447,8 +496,36 @@ server <- function(id) {
         RV$nest_checks_data
       )
     )
+    
+    summary_table$server(
+      "own_data_table",
+      reactive(
+        RV$own_data
+      ),
+      reactive(
+        input$own_data_absolute_values
+      )
+    )
+    
+    summary_plot$server(
+      "own_data_plot",
+      reactive(
+        RV$own_data
+      )
+    )
 
     # Observers ---------------------------------------------------------------
+    
+    observeEvent(input$visualise_button, {
+      req(input$own_data_file)
+      data <- read.xlsx(input$own_data_file$datapath) |> 
+        as_tibble()
+      
+      colnames(data) <- str_replace_all(colnames(data), "\\.", " ")
+      print(data)
+      
+      RV$own_data <- data
+    })
 
     observeEvent(input$nest_checks_nests, {
       RV$nest_checks_data <- data_handler$update_nest_data(

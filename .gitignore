@@ -1,6 +1,7 @@
 .DS_Store
 rsconnect
 tests
+*.xlsx
 
 # History files
 .Rhistory
