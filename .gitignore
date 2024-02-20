@@ -2,6 +2,7 @@
 rsconnect
 tests
 *.xlsx
+pins
 
 # History files
 .Rhistory

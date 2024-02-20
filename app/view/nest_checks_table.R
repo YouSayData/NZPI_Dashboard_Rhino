@@ -13,6 +13,7 @@ box::use(
     renderUI,
   ],
   dplyr[
+    filter,
     select,
     arrange,
     desc,
@@ -50,12 +51,12 @@ server <- function(id, data) {
       tagList(
         data_utils$csvDownloadButton(
           table_id),
-        data() |>
+        data() |> 
         select(
           Date,
           Time,
           Interaction,
-          `Nest Status`,
+          `Latest Nest Status`,
           `Number of Adults` = number_of_adults,
           `Number of Eggs` = number_of_eggs,
           `Number of Chicks` = number_of_chicks
@@ -81,7 +82,7 @@ server <- function(id, data) {
             `Interaction` = colDef(
               vAlign = "center"
             ),
-            `Nest Status` = colDef(
+            `Latest Nest Status` = colDef(
               vAlign = "center"
             ),
             `Number of Adults` = colDef(align = "center",

@@ -6,10 +6,12 @@ box::use(
     NS,
     fluidRow,
     h4,
+    observe,
     observeEvent,
     reactiveValues,
     isolate,
     reactive,
+    reactiveValuesToList,
     req,
     tagList,
     tags,
@@ -35,6 +37,11 @@ box::use(
     tabItem,
     infoBox,
   ],
+  shinymanager[
+    check_credentials,
+    secure_app,
+    secure_server,
+  ],
   dplyr[
     as_tibble,
     tibble,
@@ -57,7 +64,15 @@ box::use(
   ],
   stringr[
     str_replace_all,
+    str_to_lower,
   ],
+  here[
+    here,
+  ],
+  pins[
+    board_folder,
+    pin_read,
+  ]
 )
 
 box::use(
@@ -65,6 +80,7 @@ box::use(
   app / view / summary_table,
   app / view / comparison_table,
   app / view / summary_map,
+  app / view / nest_checks_map,
   app / view / summary_plot,
   app / view / comparison_plot,
   app / view / nest_checks_plot,
@@ -73,10 +89,7 @@ box::use(
 )
 
 #' @export
-ui <- function(id) {
-  ns <- NS(id)
-
-  dashboardPage(
+ui <- secure_app(dashboardPage(
     dashboardHeader(
       left = "NZPI Dashboard",
       logo_path = "static/nzpi-navy-logo.png",
@@ -122,7 +135,7 @@ ui <- function(id) {
               color = "grey",
               ribbon = T,
               selectInput(
-                ns("summary_region"),
+                "summary_region",
                 label = "Region",
                 choices = "",
                 selected = NULL,
@@ -130,7 +143,7 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("summary_area"),
+                "summary_area",
                 label = "Area",
                 choices = "",
                 selected = NULL,
@@ -138,7 +151,7 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("summary_sites"),
+                "summary_sites",
                 label = "Site",
                 choices = "",
                 selected = NULL,
@@ -146,20 +159,20 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("summary_season"),
+                "summary_season",
                 label = "Season",
                 choices = "",
                 selected = NULL,
                 multiple = F,
                 type = "search selection"
               ),
-              toggle(ns("summary_absolute_values"),
+              toggle("summary_absolute_values",
                 label = "Show counts",
                 is_marked = FALSE
               )
             ),
             box(
-              summary_plot$ui(ns("summary_plot")),
+              summary_plot$ui("summary_plot"),
               title = "Plot",
               ribbon = F,
               collapsible = T
@@ -167,13 +180,13 @@ ui <- function(id) {
           ),
           fluidRow(
             box(
-              summary_table$ui(ns("summaries_table")),
+              summary_table$ui("summaries_table"),
               title = "Data",
               ribbon = F,
               collapsible = T
             ),
             box(
-              summary_map$ui(ns("summary_map")),
+              summary_map$ui("summary_map"),
               title = "Map",
               ribbon = F,
               collapsible = T
@@ -191,7 +204,7 @@ ui <- function(id) {
               color = "grey",
               ribbon = T,
               selectInput(
-                ns("nest_checks_region"),
+                "nest_checks_region",
                 label = "Regions",
                 choices = "",
                 selected = NULL,
@@ -199,7 +212,7 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("nest_checks_area"),
+                "nest_checks_area",
                 label = "Areas",
                 choices = "",
                 selected = NULL,
@@ -207,7 +220,7 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("nest_checks_sites"),
+                "nest_checks_sites",
                 label = "Sites",
                 choices = "",
                 selected = NULL,
@@ -215,7 +228,7 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("nest_checks_nests"),
+                "nest_checks_nests",
                 label = "Nests",
                 choices = "",
                 selected = NULL,
@@ -224,7 +237,7 @@ ui <- function(id) {
               )
             ),
             box(
-              nest_checks_plot$ui(ns("nest_checks_plot")),
+              nest_checks_plot$ui("nest_checks_plot"),
               title = "Image",
               ribbon = F,
               collapsible = T
@@ -232,13 +245,13 @@ ui <- function(id) {
           ),
           fluidRow(
             box(
-              nest_checks_table$ui(ns("nest_checks_table")),
+              nest_checks_table$ui("nest_checks_table"),
               title = "Data",
               ribbon = F,
               collapsible = T
             ),
             box(
-              summary_map$ui(ns("nest_checks_map")),
+              summary_map$ui("nest_checks_map"),
               title = "Map",
               ribbon = F,
               collapsible = T
@@ -256,7 +269,7 @@ ui <- function(id) {
               color = "grey",
               ribbon = T,
               selectInput(
-                ns("comparison_region"),
+                "comparison_region",
                 label = "Region",
                 choices = "",
                 selected = NULL,
@@ -264,7 +277,7 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("comparison_area"),
+                "comparison_area",
                 label = "Area",
                 choices = "",
                 selected = NULL,
@@ -272,20 +285,20 @@ ui <- function(id) {
                 type = "search selection"
               ),
               selectInput(
-                ns("comparison_sites"),
+                "comparison_sites",
                 label = "Site",
                 choices = "",
                 selected = NULL,
                 multiple = F,
                 type = "search selection"
               ),
-              toggle(ns("comparison_absolute_values"),
+              toggle("comparison_absolute_values",
                 label = "Show counts",
                 is_marked = FALSE
               )
             ),
             box(
-              comparison_plot$ui(ns("comparison_plot")),
+              comparison_plot$ui("comparison_plot"),
               title = "Plot",
               ribbon = F,
               collapsible = T
@@ -293,13 +306,13 @@ ui <- function(id) {
           ),
           fluidRow(
             box(
-              comparison_table$ui(ns("comparison_table")),
+              comparison_table$ui("comparison_table"),
               title = "Data",
               ribbon = F,
               collapsible = T
             ),
             box(
-              summary_map$ui(ns("comparison_map")),
+              summary_map$ui("comparison_map"),
               title = "Map",
               ribbon = F,
               collapsible = T
@@ -317,19 +330,19 @@ tabItem(
       color = "grey",
       ribbon = T,
       file_input(
-        ns("own_data_file"),
+        "own_data_file",
         label = "",
         accept = "xlsx",
         multiple = F
       ),
-      button(ns("visualise_button"), "Visualise"),
-      toggle(ns("own_data_absolute_values"),
+      button("visualise_button", "Visualise"),
+      toggle("own_data_absolute_values",
              label = "Show counts",
              is_marked = FALSE
       )
     ),
     box(
-      summary_plot$ui(ns("own_data_plot")),
+      summary_plot$ui("own_data_plot"),
       title = "Plot",
       ribbon = F,
       collapsible = T
@@ -337,7 +350,7 @@ tabItem(
   ),
   fluidRow(
     box(
-      summary_table$ui(ns("own_data_table")),
+      summary_table$ui("own_data_table"),
       title = "Data",
       ribbon = F,
       collapsible = T
@@ -355,30 +368,58 @@ tabItem(
       )
     )
   )
-}
+)
 
 #' @export
-server <- function(id) {
-  moduleServer(id, function(input, output, session) {
+server <- function(input, output, session) {
+  
+  res_auth <- secure_server(
+    check_credentials(
+      {
+        board <- board_folder(here("pins"))
+        pin_read(board, "auth_pin")
+      }
+    )
+  )
     # initialize --------------------------------------------------------------
     waiter_show(html = tagList(
       spin_flower(),
       h4("Penguins loading...")
     ) , color = "black")
-    RV <- reactiveValues()
-
-    nest_checks_data <- data_handler$load_nest_check_data()
-    RV$nest_checks_data <- nest_checks_data
-
-    nest_checks_region_choices <- nest_checks_data |>
-      pull(Region) |>
-      unique() |>
-      sort()
-
-    updateSelectInput(session,
-      "nest_checks_region",
-      choices = nest_checks_region_choices
-    )
+  
+  nest_checks_data <- data_handler$load_data("nest_checks")
+  
+  RV <- reactiveValues()
+  
+  observeEvent(res_auth$user, 
+               {
+                 board <- board_folder(here("pins"))
+                 
+                 access <- pin_read(board, "auth_pin") |> 
+                   filter(user == res_auth$user) |> 
+                   pull(access)
+                 
+                 RV$access <- access
+                 if (access != "all") {
+                   RV$nest_checks_data <- nest_checks_data |>
+                       filter(
+                         str_to_lower(Region) == access
+                       )
+                   } else {
+                     RV$nest_checks_data <- nest_checks_data
+                   }
+                 RV$nest_checks_region_choices <- RV$nest_checks_data |>
+                   pull(Region) |>
+                   unique() |>
+                   sort()
+               })
+     
+     observeEvent(RV$nest_checks_region_choices, {
+       updateSelectInput(session,
+                         "nest_checks_region",
+                         choices = RV$nest_checks_region_choices
+       )
+     })
 
     # summary_data <- data_handler$load_data("nest_summary3")
     summary_mockup <- bind_rows(
@@ -386,8 +427,9 @@ server <- function(id) {
       readRDS(here("rds", "mockup_data_3.rds"))
       )
     
-    summary_data <- summary_mockup
-    comparison_data <- summary_mockup
+    summary_data <- data_handler$load_summary_data("site_summary")
+    comparison_data <- data_handler$load_summary_data("site_comparison")
+    
     RV$summary_data <- summary_data
     RV$comparison_data <- comparison_data
     RV$own_data <- tibble()
@@ -399,7 +441,8 @@ server <- function(id) {
 
     updateSelectInput(session,
       "summary_region",
-      choices = summary_region_choices
+      choices = summary_region_choices,
+      selected = "Wellington"
     )
     
     comparison_region_choices <- comparison_data |>
@@ -441,7 +484,7 @@ server <- function(id) {
       )
     )
     
-    summary_map$server(
+    nest_checks_map$server(
       "nest_checks_map",
       reactive(
         RV$nest_checks_data
@@ -522,8 +565,7 @@ server <- function(id) {
         as_tibble()
       
       colnames(data) <- str_replace_all(colnames(data), "\\.", " ")
-      print(data)
-      
+
       RV$own_data <- data
     })
 
@@ -684,5 +726,4 @@ server <- function(id) {
                           sort()
       )
     })
-  })
 }

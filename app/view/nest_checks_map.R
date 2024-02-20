@@ -3,8 +3,14 @@ box::use(
     leafletOutput,
     renderLeaflet,
     addMarkers,
+    setView,
   ],
   shiny[moduleServer, NS, req],
+  dplyr[
+    distinct,
+    filter,
+    select,
+  ]
 )
 
 box::use(
@@ -25,14 +31,20 @@ server <- function(id, data) {
       {
         req(nrow(data()) > 0)
         
-        tmp  <- data()
+        tmp  <- data() |> 
+          select(Nest, nest_lat, nest_lon) |>
+          filter(nest_lat != 0, nest_lon != 0) |> 
+          distinct()
+        
+        req(nrow(tmp) > 0)
         
         map_utils$basemap |>
           addMarkers(
             lat = tmp$nest_lat,
-            lng = tmp$nest_long,
+            lng = tmp$nest_lon,
             label = tmp$Nest
-          )
+          ) |> 
+          setView(tmp$nest_lon, tmp$nest_lat, zoom = 17)
       }
     )
   })

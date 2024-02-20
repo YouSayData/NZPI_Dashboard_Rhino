@@ -30,7 +30,7 @@ server <- function(id, data) {
         map_utils$basemap |>
           addMarkers(
             lat = tmp$site_lat,
-            lng = tmp$site_long,
+            lng = tmp$site_lon,
             label = tmp$Site
           )
       }

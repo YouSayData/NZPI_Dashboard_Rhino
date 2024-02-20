@@ -38,10 +38,9 @@ server <- function(id, data) {
       echart <- tmp |>
         mutate(year = as.character(year),
                across(contains("fledged"), round, digits =2)) |>
-        group_by(Clutch) |>
-        e_charts(year, timeline = T) |>
+        e_charts(year) |>
         e_bar(`Chicks fledged per clutch`) |>
-        e_bar(`Chicks fledged per female`) |>
+        e_bar(`Breeding Success (proxy)`) |>
         e_tooltip() |> 
         e_toolbox_feature(feature = c("saveAsImage"))
       
