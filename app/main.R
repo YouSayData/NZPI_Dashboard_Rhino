@@ -1,7 +1,12 @@
 box::use(
   shiny[
+    renderUI,
+    uiOutput,
+    actionButton,
     enableBookmarking,
     bookmarkButton,
+    downloadHandler,
+    downloadButton,
     moduleServer,
     NS,
     fluidRow,
@@ -48,6 +53,7 @@ box::use(
     bind_rows,
     filter,
     pull,
+    slice,
   ],
   here[
     here,
@@ -63,6 +69,7 @@ box::use(
     write.xlsx,
   ],
   stringr[
+    str_c,
     str_replace_all,
     str_to_lower,
   ],
@@ -89,7 +96,8 @@ box::use(
 )
 
 #' @export
-ui <- secure_app(dashboardPage(
+ui <- secure_app(
+  ui = dashboardPage(
     dashboardHeader(
       left = "NZPI Dashboard",
       logo_path = "static/nzpi-navy-logo.png",
@@ -107,14 +115,14 @@ ui <- secure_app(dashboardPage(
           icon = icon("clipboard outline")
         ),
         menuItem(
-          tabName = "nest_checks",
-          "Nest Checks",
-          icon = icon("boxes")
-        ),
-        menuItem(
           tabName = "comparison",
           "Comparisons",
           icon = icon("clone outline")
+        ),
+        menuItem(
+          tabName = "nest_checks",
+          "Nest Checks",
+          icon = icon("boxes")
         ),
         menuItem(
           tabName = "visualise_own",
@@ -180,6 +188,7 @@ ui <- secure_app(dashboardPage(
           ),
           fluidRow(
             box(
+              h4("Recorded data may still contain provisional numbers."),
               summary_table$ui("summaries_table"),
               title = "Data",
               ribbon = F,
@@ -198,6 +207,7 @@ ui <- secure_app(dashboardPage(
 
         tabItem(
           tabName = "nest_checks",
+          fluidRow(uiOutput("nest_checks_auth")),
           fluidRow(
             box(
               title = "Filters",
@@ -306,6 +316,7 @@ ui <- secure_app(dashboardPage(
           ),
           fluidRow(
             box(
+              h4("Recorded data may still contain provisional numbers."),
               comparison_table$ui("comparison_table"),
               title = "Data",
               ribbon = F,
@@ -335,6 +346,7 @@ tabItem(
         accept = "xlsx",
         multiple = F
       ),
+      downloadButton("download_template", "Download Template"),
       button("visualise_button", "Visualise"),
       toggle("own_data_absolute_values",
              label = "Show counts",
@@ -367,7 +379,18 @@ tabItem(
         useWaiter()
       )
     )
+  ),
+tags_bottom = tagList(
+  tags$div(
+    style = "text-align: center; margin-bottom: 15px;",
+    "OR"
+  ),
+  actionButton(
+    inputId = "visitor", 
+    label = "Connect as guest",
+    width = "100%"
   )
+)
 )
 
 #' @export
@@ -381,6 +404,15 @@ server <- function(input, output, session) {
       }
     )
   )
+  
+  # bypass auth module if guest button is clicked
+  observeEvent(input$visitor, {
+    token <- shinymanager:::.tok$generate("visitor")
+    shinymanager:::.tok$add(token, list(user = "visitor", access = "guest"))
+    shinymanager:::addAuthToQuery(session, token, "en")
+    session$reload()
+  })
+  
     # initialize --------------------------------------------------------------
     waiter_show(html = tagList(
       spin_flower(),
@@ -399,12 +431,22 @@ server <- function(input, output, session) {
                    filter(user == res_auth$user) |> 
                    pull(access)
                  
+                 if (length(access) == 0) {
+                   access <- "guest"
+                 }
+                 
                  RV$access <- access
                  if (access != "all") {
-                   RV$nest_checks_data <- nest_checks_data |>
+                   if (access != "guest") {
+                     RV$nest_checks_data <- nest_checks_data |>
                        filter(
                          str_to_lower(Region) == access
                        )
+                   } else {
+                     RV$nest_checks_data <- nest_checks_data |> 
+                       slice(0)
+                     }
+                  
                    } else {
                      RV$nest_checks_data <- nest_checks_data
                    }
@@ -452,7 +494,8 @@ server <- function(input, output, session) {
     
     updateSelectInput(session,
                       "comparison_region",
-                      choices = comparison_region_choices
+                      choices = comparison_region_choices,
+                      selected = "Wellington"
     )
 
     # module servers ----------------------------------------------------------
@@ -495,18 +538,21 @@ server <- function(input, output, session) {
       "summary_plot",
       reactive(
         RV$summary_data
+      ),
+      reactive(
+        input$summary_absolute_values
       )
     )
     
-    comparison_table$server(
-      "comparison_table",
-      reactive(
-        RV$comparison_data
-      ),
-      reactive(
-        input$comparison_absolute_values
-      )
-    )
+    # comparison_table$server(
+    #   "comparison_table",
+    #   reactive(
+    #     RV$comparison_data
+    #   ),
+    #   reactive(
+    #     input$comparison_absolute_values
+    #   )
+    # )
     
     summary_map$server(
       "comparison_map",
@@ -554,6 +600,9 @@ server <- function(input, output, session) {
       "own_data_plot",
       reactive(
         RV$own_data
+      ),
+      reactive(
+        input$own_data_absolute_values
       )
     )
 
@@ -568,6 +617,26 @@ server <- function(input, output, session) {
 
       RV$own_data <- data
     })
+    
+    output$nest_checks_auth <- renderUI({
+      if (RV$access == "guest") {
+        access_message <- "You are logged in as a guest and cannot see individual nest checks."
+      } else {
+        access_message <- str_c("You can see the nest checks from the following regions: ", str_to_lower(RV$access))
+      }
+      tags$h4(access_message)
+    })
+    
+    output$download_template  <- downloadHandler(
+      filename = "nzpi_own_data_tmp.xlsx",
+      content = function(file) {
+        data <- summary_data |> 
+          filter(Area == "Wellington") |>
+          slice(0)
+        
+        write.xlsx(data, file)
+      }
+    )
 
     observeEvent(input$nest_checks_nests, {
       RV$nest_checks_data <- data_handler$update_nest_data(
@@ -640,6 +709,15 @@ server <- function(input, output, session) {
           pull(year) |>
           unique() |>
           sort()
+      )
+      
+      RV$summary_data <- data_handler$update_summary_data(
+        summary_data,
+        list(
+          area_filter = input$summary_area,
+          site_filter = input$summary_sites,
+          season_filter = input$summary_season
+        )
       )
     })
 

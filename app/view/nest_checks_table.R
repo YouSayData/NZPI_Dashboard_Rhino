@@ -5,6 +5,7 @@ box::use(
     colFormat,
   ],
   shiny[
+    req,
     tagList,
     moduleServer, 
     NS,
@@ -46,6 +47,7 @@ ui <- function(id) {
 server <- function(id, data) {
   moduleServer(id, function(input, output, session) {
     output$table <- renderUI({
+      req(nrow(data()) > 0)
       table_id <- str_c(id, "react_tbl", sep = "-")
       
       tagList(

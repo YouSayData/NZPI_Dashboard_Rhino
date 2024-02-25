@@ -52,12 +52,15 @@ server <- function(id, data, show_counts) {
         display_data <- data() |>
           select(
             Season = year,
-            `Clutch`,
-            `Number of females`,
-            `Number of clutches laid`,
-            `Eggs laid`,
-            `Chicks hatched`,
-            `Chicks fledged`
+            `Number of clutches laid` = Clutches,
+            `Eggs laid` = Total_eggs,
+            `Chicks hatched` = Total_chicks,
+            `Chicks fledged` = Total_fledged,
+            `Chicks uplifted` = Total_uplifted,
+            `Failed` = Total_failed,
+            `Unknown Outcome` = Total_unknown,
+            `Active Nests`,
+            `Inactive Nests`
           )  |>
           mutate(
             Season = as.character(Season)
@@ -69,25 +72,53 @@ server <- function(id, data, show_counts) {
             highlight = T,
             defaultPageSize = 5,
             columns = list(
-              `Season` = colDef(rowHeader = T,
-                                vAlign = "center"),
-              `Clutch` = colDef(
-                header = with_tooltip("Clutch", 
-                                      "Single clutch: 1 or 2 eggs</br>
-                                                    Replacement clutch: clutch laid after first clutch failed</br>
-                                                    All single broods: single and replacement clutches combined"),
+              Season = colDef(rowHeader = T,
+                              align = "center",
+                              vAlign = "center"),
+              `Number of clutches laid` = colDef(
+                align = "center",
                 vAlign = "center"
+              ),
+              `Eggs laid` = colDef(
+                align = "center",
+                vAlign = "center"
+              ),
+              `Chicks hatched` = colDef(
+                align = "center",
+                vAlign = "center"
+              ),
+              `Chicks fledged` = colDef(
+                align = "center",
+                vAlign = "center"
+              ),
+              `Chicks uplifted` = colDef(
+                align = "center",
+                vAlign = "center"
+              ),
+              `Failed` = colDef(
+                align = "center",
+                vAlign = "center"
+              ),
+              `Unknown Outcome` = colDef(
+                align = "center",
+                vAlign = "center"
+              ),
+              `Active Nests` = colDef(
+                header = with_tooltip(
+                  "Active Nests",
+                  "Nest Sites with Breeding (Proxy for Pairs)"
                 ),
-              `Number of females` = colDef(align = "center",
-                                                   vAlign = "center"),
-              `Number of clutches laid` = colDef(align = "center",
-                                                         vAlign = "center"),
-              `Eggs laid` = colDef(align = "center",
-                                                            vAlign = "center"),
-              `Chicks hatched` = colDef(align = "center",
-                                                    vAlign = "center"),
-              `Chicks fledged` = colDef(align = "center",
-                                        vAlign = "center")
+                align = "center",
+                vAlign = "center"
+              ),
+              `Inactive Nests` = colDef(
+                header = with_tooltip(
+                  "Inactive Nests",
+                  "Nest Sites without Breeding"
+                ),
+                align = "center",
+                vAlign = "center"
+              )
             )
           )
         
@@ -95,13 +126,15 @@ server <- function(id, data, show_counts) {
         display_data <- data() |>
           select(
             Season = year,
-            `Clutch`,
-            `Chicks fledged per female`,
+            `Number of clutches laid` = Clutches,
             `Chicks fledged per clutch`,
-            contains("success")
+            contains("success"),
+            `Total Nests`,
+            `Active Nests (perc)`,
+            `Inactive Nests (perc)`
           )  |>
           mutate(
-            across(-Clutch, ~round(., digits = 2)),
+            across(-Season, ~round(., digits = 2)),
             Season = as.character(Season)
           )
         
@@ -115,26 +148,75 @@ server <- function(id, data, show_counts) {
             defaultPageSize = 5,
             columns = list(
               `Season` = colDef(rowHeader = T,
+                                align = "center",
                                 vAlign = "center"),
-              `Clutch` = colDef(
-                header = with_tooltip("Clutch", 
-                                      "Single clutch: 1 or 2 eggs</br>
-                                                    Replacement clutch: clutch laid after first clutch failed</br>
-                                                    All single broods: single and replacement clutches combined"),
-                vAlign = "center"),
-              `Chicks fledged per female` = colDef(align = "center",
-                                                   vAlign = "center"),
-              `Chicks fledged per clutch` = colDef(align = "center",
-                                                   vAlign = "center"),
-              `Hatching success (hatched/laid)` = colDef(format = colFormat(percent = TRUE, digits = 1),
-                                                         align = "center",
-                                                         vAlign = "center"),
-              `Fledging success (fledged/hatched)` = colDef(format = colFormat(percent = TRUE, digits = 1),
-                                                            align = "center",
-                                                            vAlign = "center"),
-              `Egg success (fledged/laid)` = colDef(format = colFormat(percent = TRUE, digits = 1),
-                                                    align = "center",
-                                                    vAlign = "center")
+              `Number of clutches laid` = colDef(
+                align = "center",
+                vAlign = "center"
+              ),
+              `Breeding Success (proxy)` = colDef(
+                header = with_tooltip(
+                  "Breeding Success (proxy)",
+                  "Chicks Fledged / Active Nests"
+                ),
+                format = colFormat(digits = 2),
+                align = "center",
+                vAlign = "center"
+              ),
+              `Chicks fledged per clutch` = colDef(
+                format = colFormat(digits = 2),
+                align = "center",
+                vAlign = "center"
+              ),
+              `Hatching Success (Fertility)` = colDef(
+                header = with_tooltip(
+                  "Hatching Success (Fertility)",
+                  "Chicks Fledged / Eggs Laid"
+                ),
+                format = colFormat(percent = TRUE, digits = 0),
+                align = "center",
+                vAlign = "center"
+              ),
+              `Fledging Success (Chicks Survival)` = colDef(
+                header = with_tooltip(
+                  "Fledging Success (Chick Survival)",
+                  "Chicks Fledged / Chicks Hatched"
+                ),
+                format = colFormat(percent = TRUE, digits = 0),
+                align = "center",
+                vAlign = "center"
+              ),
+              `Reproductive Success` = colDef(
+                header = with_tooltip(
+                  "Reproductive Success",
+                  "Chicks Fledged / Eggs Laid"
+                ),
+                format = colFormat(percent = TRUE, digits = 0),
+                align = "center",
+                vAlign = "center"
+              ),
+              `Active Nests (perc)` = colDef(
+                header = with_tooltip(
+                  "Active Nests",
+                  "Active Nests / Total Nests"
+                ),
+                format = colFormat(percent = TRUE, digits = 0),
+                align = "center",
+                vAlign = "center"
+              ),
+              `Inactive Nests (perc)` = colDef(
+                header = with_tooltip(
+                  "Inactive Nests",
+                  "Inactive Nests / Total Nests"
+                ),
+                format = colFormat(percent = TRUE, digits = 0),
+                align = "center",
+                vAlign = "center"
+              ),
+              `Total Nests` = colDef(
+                align = "center",
+                vAlign = "center"
+              )
             ),
             elementId = table_id
           )

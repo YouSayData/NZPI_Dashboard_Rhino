@@ -43,6 +43,8 @@ box::use(
     str_to_title,
     str_c,
     str_extract,
+    str_split_1,
+    str_replace_all,
   ],
   lubridate[
     date,
@@ -231,6 +233,9 @@ nest_checks <- nest_checks |>
          site_lon,
          nest_check_datetime
   )
+
+nest_checks <- nest_checks |> 
+  anti_join(nest_report_exclusions_names, by = c("Nest" = "Nest_id_long"))
   
 board <- board_folder(here("pins"))
 pin_write(board, nest_summary, "nest_summary")
@@ -239,11 +244,21 @@ pin_write(board, nest_ids, "nest_ids")
 pin_write(board, site_summary, "site_summary")
 pin_write(board, site_comparison, "site_comparison")
 
+users <- Sys.getenv("SHINY_USERS") |> 
+  str_split_1(",")
 
+passwords <- Sys.getenv("SHINY_PW") |> 
+  str_split_1(",")
+
+accesses <- Sys.getenv("SHINY_ACCESS") |> 
+  str_split_1(",") |> 
+  str_replace_all(";", ",")
+
+# set through environment variables in main app
 auth_pin <- tibble(
-  user = c("admin", "wellington"),
-  password = c("admin", "wellington"),
-  access = c("all", "wellington")
+  user = users,
+  password = passwords,
+  access = accesses
 )
 
 pin_write(board, auth_pin, "auth_pin")
