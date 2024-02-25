@@ -238,11 +238,11 @@ nest_checks <- nest_checks |>
   anti_join(nest_report_exclusions_names, by = c("Nest" = "Nest_id_long"))
   
 board <- board_folder(here("pins"))
-pin_write(board, nest_summary, "nest_summary")
+pin_write(board, nest_summary |> filter(Area != "Unknown"), "nest_summary")
 pin_write(board, nest_checks, "nest_checks")
 pin_write(board, nest_ids, "nest_ids")
-pin_write(board, site_summary, "site_summary")
-pin_write(board, site_comparison, "site_comparison")
+pin_write(board, site_summary |> filter(Area != "Unknown"), "site_summary")
+pin_write(board, site_comparison |> filter(Area != "Unknown"), "site_comparison")
 
 users <- Sys.getenv("SHINY_USERS") |> 
   str_split_1(",")
