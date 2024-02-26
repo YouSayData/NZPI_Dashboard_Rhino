@@ -1,5 +1,6 @@
 box::use(
   shiny[
+    br,
     renderUI,
     uiOutput,
     actionButton,
@@ -177,6 +178,11 @@ ui <- secure_app(
               toggle("summary_absolute_values",
                 label = "Show counts",
                 is_marked = FALSE
+              ),
+              br(),
+              toggle("summary_nest_activity",
+                     label = "Toggle between nest and breeding activity",
+                     is_marked = FALSE
               )
             ),
             box(
@@ -351,6 +357,11 @@ tabItem(
       toggle("own_data_absolute_values",
              label = "Show counts",
              is_marked = FALSE
+      ),
+      br(),
+      toggle("own_data_nest_activity",
+             label = "Toggle between nest and breeding activity",
+             is_marked = FALSE
       )
     ),
     box(
@@ -507,6 +518,9 @@ server <- function(input, output, session) {
       ),
       reactive(
         input$summary_absolute_values
+      ),
+      reactive(
+        input$summary_nest_activity
       )
     )
     
@@ -593,6 +607,9 @@ server <- function(input, output, session) {
       ),
       reactive(
         input$own_data_absolute_values
+      ),
+      reactive(
+        input$own_data_nest_activity
       )
     )
     

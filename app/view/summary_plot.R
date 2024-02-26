@@ -9,6 +9,9 @@ box::use(
     e_title,
     e_legend,
     e_grid,
+    e_y_axis,
+    e_axis_formatter,
+    e_tooltip_item_formatter,
   ],
   shiny[
     div,
@@ -94,8 +97,13 @@ server <- function(id, data, show_counts) {
           e_bar(`Hatching Success (Fertility)`) |>
           e_bar(`Fledging Success (Chicks Survival)`) |>
           e_bar(`Reproductive Success`) |>
-          e_bar(`Breeding Success (proxy)`) |>
-          e_tooltip() |> 
+          # e_bar(`Breeding Success (proxy)`) |>
+          e_tooltip(
+            formatter = e_tooltip_item_formatter(
+              style = "percent",
+              digits = 0
+            )
+          ) |> 
           e_toolbox_feature(feature = c("saveAsImage")) |>
           e_title(plot_title, "Breeding Success") |> 
           e_legend(
@@ -103,7 +111,10 @@ server <- function(id, data, show_counts) {
             right = 0, 
             top = 0
           ) |>
-          e_grid(height = "60%", top = "25%")
+          e_grid(height = "60%", top = "25%") |> 
+          e_y_axis(
+            formatter = e_axis_formatter("percent", digits = 0)
+          )
       }
       
       echart

@@ -115,9 +115,10 @@ site_summary <- site_summary_nest_status |>
     across(`Chicks fledged per clutch`:`Breeding Success (proxy)`, \(x) dplyr::na_if(x, Inf)),
     `Active Nests` = `Active - failed` + `Active - fledged` + `Active - insufficient data` + `Active - for investigation`,
     `Inactive Nests` = Inactive,
-    `Total Nests` = `Active Nests` + `Inactive Nests`,
+    `Total Nests` = `Active Nests` + `Inactive Nests` + `Active - not breeding`,
     `Active Nests (perc)` = `Active Nests` / `Total Nests`,
     `Inactive Nests (perc)` = `Inactive Nests` / `Total Nests`,
+    `Active - not breeding (perc)` = `Active - not breeding` / `Total Nests`,
     across(is.numeric, round, digits = 4)
     )
 
@@ -252,7 +253,8 @@ passwords <- Sys.getenv("SHINY_PW") |>
 
 accesses <- Sys.getenv("SHINY_ACCESS") |> 
   str_split_1(",") |> 
-  str_replace_all(";", ",")
+  str_replace_all(";", ",") |> 
+  str_replace_all("_", " ")
 
 # set through environment variables in main app
 auth_pin <- tibble(
