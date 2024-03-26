@@ -258,7 +258,7 @@ server <- function(id, data, show_counts, nest_activity) {
                   `Hatching Success (Fertility)` = colDef(
                     header = with_tooltip(
                       "Hatching Success (Fertility)",
-                      "Chicks Fledged / Eggs Laid"
+                      "Chicks Hatched / Eggs Laid"
                     ),
                     format = colFormat(percent = TRUE, digits = 0),
                     align = "center",
